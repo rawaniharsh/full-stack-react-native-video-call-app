@@ -1,4 +1,4 @@
-import { ADD_STREAM, MY_STREAM } from '../actions/types';
+import { ADD_REMOTE_STREAM, ADD_STREAM, MY_STREAM } from '../actions/types';
 
 const initialState = {};
 
@@ -16,6 +16,15 @@ export default (state = initialState, {type, payload}) => {
       return {
         ...state,
         streams: [...streams, payload]
+      }
+    case ADD_REMOTE_STREAM:
+      const otherStreams = state.streams.filter(
+        ({email}) => payload.email !== email,
+      );
+
+      return {
+        ...state,
+        streams: [...otherStreams, payload]
       }
     default:
       return state;

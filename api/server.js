@@ -103,6 +103,18 @@ io.on("connection", function (socket) {
       });
     });
   });
+
+  //listen for peer connections
+  socket.on("join-stream-room", ({roomID, peerID, socketID, user})=>{
+    socket.join(roomID);
+
+    socket.to(roomID).broadcast.emit("user-connected", {
+      peerID,
+      user,
+      roomID,
+      socketID,
+    })
+  })
 });
 
 const port = process.env.PORT || 5000;

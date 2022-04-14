@@ -7,7 +7,7 @@ import {ID} from './authActions';
 
 /** Web RTC */
 import {mediaDevices} from 'react-native-webrtc';
-import { ADD_STREAM, ALL_USERS, MY_STREAM } from './types';
+import { ADD_REMOTE_STREAM, ADD_STREAM, ALL_USERS, MY_STREAM } from './types';
 
 //** API_URI */
 export const API_URI = `http://localhost:5000`;
@@ -96,7 +96,53 @@ export const joinStream = (stream) => async (dispatch, getState) => {
       ...user,
     }
   })
+
+  peerServer.on('open', (peerID) => {
+     socket.emit("join-stream-room", {
+       roomID, peerID, socketID: socket.id, user
+     });
+  });
+
+  socket.on('user-connected', ({peerID, user, roomID, socketID})=> {
+    connectToNewUser({peerID, user, roomID, socketID})
+  });
+
+  //Last user recieves a call
+  peerServer.on('call', (call)=>{
+    //answer back to all remote streams
+    call.answer(stream);
+
+    call.on('stream', (remoteStreams)=>{
+      dispatch({
+        type: ADD_STREAM,
+        payload: {
+          stream: remoteStreams,
+          name: `user+${ID()}`,
+          uid: `id_${ID()}`,
+          email: 'harsh@gmail.com'
+        }
+      })
+    })
+  })
 };
+
+function connectToNewUser({peerID, user, roomID, socketID, stream}){
+  //call the last user from devices
+  const call = peerServer.call(peerID, stream);
+
+  call.on('stream', (lastuserstream)=> {
+    if(lastuserstream){
+      dispatch({
+        type: ADD_REMOTE_STREAM,
+        payload: {
+          stream,
+          lastuserstream,
+          ...user
+        }
+      })
+    }
+  })
+}
 
 export const disconnect = () => async () => {
   // peerServer.disconnect();
